@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://rawgit.com/jeromeetienne/ar.js/1.7.2/aframe/build/aframe-ar.min.js"></script>
+    <script>
+      AFRAME.registerComponent('draggable', {
+        init: function () {
+          let el = this.el;
+          let sceneEl = document.querySelector('a-scene');
+          let dragging = false;
+          let startPosition = new THREE.Vector3();
+          
+          el.addEventListener('mousedown', (event) => {
+            dragging = true;
+            startPosition.copy(el.object3D.position);
+          });
+
+          sceneEl.addEventListener('mouseup', () => {
+            dragging = false;
+          });
+
+          sceneEl.addEventListener('mousemove', (event) => {
+            if (dragging) {
+              let deltaX = event.movementX * 0.01;
+              let deltaY = -event.movementY * 0.01;
+              el.object3D.position.x += deltaX;
+              el.object3D.position.y += deltaY;
+              updatePositionText(el.object3D.position);
+            }
+          });
+        }
+      });
+      
+      function updatePositionText(pos) {
+        document.getElementById('positionText').innerText = `X: ${pos.x.toFixed(2)} Y: ${pos.y.toFixed(2)} Z: ${pos.z.toFixed(2)}`;
+      }
+    </script>
+  </head>
+  <body style="margin: 0; overflow: hidden;">
+    <a-scene embedded arjs>
+      <!-- Instruction Overlay -->
+      <a-entity id="overlay" position="0 1 -1">
+        <a-image src="SCHOOL COMPOUND TRACKER.jpg" opacity="0.5"></a-image>
+      </a-entity>
+
+      <!-- Marker for tracking -->
+      <a-marker type="pattern" url="your-marker.patt" emitevents="true" id="marker">
+        <a-entity id="3d-model" gltf-model="Muzium_Penang.glb" scale="0.5 0.5 0.5" draggable></a-entity>
+      </a-marker>
+
+      <a-entity camera></a-entity>
+    </a-scene>
+    
+    <!-- Position Display -->
+    <div id="positionText" style="position: absolute; top: 10px; left: 10px; color: white; font-size: 18px; background: rgba(0,0,0,0.5); padding: 5px;">X: 0 Y: 0 Z: 0</div>
+
+    <script>
+      let marker = document.getElementById('marker');
+      let overlay = document.getElementById('overlay');
+      let model = document.getElementById('3d-model');
+      
+      marker.addEventListener('markerFound', function () {
+        overlay.setAttribute('visible', 'false'); // Hide overlay when image is detected
+      });
+
+      marker.addEventListener('markerLost', function () {
+        model.setAttribute('visible', 'true'); // Keep the 3D model visible even after losing tracking
+      });
+    </script>
+  </body>
+</html>
