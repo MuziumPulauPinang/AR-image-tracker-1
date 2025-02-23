@@ -7,20 +7,15 @@
       AFRAME.registerComponent('draggable', {
         init: function () {
           let el = this.el;
-          let sceneEl = document.querySelector('a-scene');
           let dragging = false;
-          let startPosition = new THREE.Vector3();
-          
-          el.addEventListener('mousedown', (event) => {
+
+          const startDrag = () => {
             dragging = true;
-            startPosition.copy(el.object3D.position);
-          });
-
-          sceneEl.addEventListener('mouseup', () => {
+          };
+          const stopDrag = () => {
             dragging = false;
-          });
-
-          sceneEl.addEventListener('mousemove', (event) => {
+          };
+          const onDrag = (event) => {
             if (dragging) {
               let deltaX = event.movementX * 0.01;
               let deltaY = -event.movementY * 0.01;
@@ -28,10 +23,17 @@
               el.object3D.position.y += deltaY;
               updatePositionText(el.object3D.position);
             }
-          });
+          };
+
+          el.addEventListener('mousedown', startDrag);
+          el.addEventListener('touchstart', startDrag);
+          window.addEventListener('mouseup', stopDrag);
+          window.addEventListener('touchend', stopDrag);
+          window.addEventListener('mousemove', onDrag);
+          window.addEventListener('touchmove', onDrag);
         }
       });
-      
+
       function updatePositionText(pos) {
         document.getElementById('positionText').innerText = `X: ${pos.x.toFixed(2)} Y: ${pos.y.toFixed(2)} Z: ${pos.z.toFixed(2)}`;
       }
@@ -39,12 +41,12 @@
   </head>
   <body style="margin: 0; overflow: hidden;">
     <a-scene embedded arjs>
-      <!-- Instruction Overlay -->
-      <a-entity id="overlay" position="0 1 -1">
-        <a-image src="SCHOOL COMPOUND TRACKER.jpg" opacity="0.5"></a-image>
+      <!-- Instruction Overlay (Appears Before Tracking) -->
+      <a-entity id="overlay" position="0 0 -2">
+        <a-image src="SCHOOL COMPOUND TRACKER.jpg" opacity="0.5" width="3" height="2"></a-image>
       </a-entity>
 
-      <!-- Marker for tracking -->
+      <!-- Marker Tracking -->
       <a-marker type="pattern" url="your-marker.patt" emitevents="true" id="marker">
         <a-entity id="3d-model" gltf-model="Muzium_Penang.glb" scale="0.5 0.5 0.5" draggable></a-entity>
       </a-marker>
@@ -53,19 +55,23 @@
     </a-scene>
     
     <!-- Position Display -->
-    <div id="positionText" style="position: absolute; top: 10px; left: 10px; color: white; font-size: 18px; background: rgba(0,0,0,0.5); padding: 5px;">X: 0 Y: 0 Z: 0</div>
+    <div id="positionText" style="position: absolute; top: 10px; left: 10px; color: white; font-size: 18px; background: rgba(0,0,0,0.5); padding: 5px;">
+      X: 0 Y: 0 Z: 0
+    </div>
 
     <script>
       let marker = document.getElementById('marker');
       let overlay = document.getElementById('overlay');
       let model = document.getElementById('3d-model');
-      
+
       marker.addEventListener('markerFound', function () {
         overlay.setAttribute('visible', 'false'); // Hide overlay when image is detected
       });
 
       marker.addEventListener('markerLost', function () {
-        model.setAttribute('visible', 'true'); // Keep the 3D model visible even after losing tracking
+        model.setAttribute('visible', 'true'); // Keep 3D model visible after tracking
+        model.parentNode.removeChild(model); // Detach from marker
+        document.querySelector('a-scene').appendChild(model);
       });
     </script>
   </body>
